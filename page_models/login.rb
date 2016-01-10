@@ -27,7 +27,7 @@ module PageModels
     def login_form
       login_page = @agent.get(::Fitocracy::Paths.login_uri)
 
-      login_page.form_with(:id => 'username-login-form')
+      login_page.form_with(:id => 'login-modal-form')
     end
 
   end
