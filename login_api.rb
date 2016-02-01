@@ -3,9 +3,16 @@ require 'mechanize'
 require 'json'
 require 'pry'
 require 'csv'
-require_relative 'models/user'
+require 'sinatra/sequel'
+require_relative 'models/fitocracy_user'
 require_relative 'page_models/login'
 require_relative 'lib/fitocracy/activity'
+
+require "sinatra/config_file"
+config_file 'config.yml'
+
+set :database, "sqlite://#{settings.db['path']}"
+require_relative 'models/db'
 
 set :sessions, true
 set :session_secret, 'change_me'
@@ -33,7 +40,7 @@ end
 
 before '/user/*' do
   @agent = Mechanize.new
-  @user  = User.new({ agent: @agent, username:session[:username], password:session[:password]})
+  @user  = FitocracyUser.new({ agent: @agent, username:session[:username], password:session[:password]})
 
   halt(401, @user.error) if @user.error
 
@@ -44,7 +51,14 @@ before '/user/*' do
   halt(401, login_json['error']) unless login_json['success']
 
   @user.x_fitocracy_user  = login_response["X-Fitocracy-User"]
-  #logger.info("x_fitocracy_user: #{@user.x_fitocracy_user}")
+
+  # Store the user info in our db, since they've auth'd
+  @db_user = User.first(:username => @user.username)
+  if @db_user.nil?
+    id = database[:users].insert(:username => @user.username, :fitocracy_id => @user.x_fitocracy_user)
+    @db_user = User[id]
+  end
+
 end
 
 get '/user/activities' do
@@ -81,6 +95,65 @@ get '/user/activity/:activity_name/export' do
   content_type 'text/csv'
   csv_string
 end
+
+get '/user/activities/sync' do
+  activity_call = ::Fitocracy::Activity.new(user:  @user, agent: @agent)
+  all_activites_data = JSON.parse(activity_call.get_all_activities_for_user.body)
+
+  updated = 0
+  created = 0
+  all_activites_data.each do |fitocracy_activity|
+    activity_id = 0
+    activity = Activity.first(:fitocracy_id => fitocracy_activity['id'])
+    if activity.nil?
+      activity_id = database[:activities].insert(:fitocracy_id => fitocracy_activity['id'], :name=>fitocracy_activity['name'])
+      created += 1
+    else
+      activity_id = activity.id
+    end
+
+    activity_count = UserActivityCount.first(:user_id=>@db_user.id, :activity_id=>activity_id)
+    if activity_count.nil?
+      database[:user_activity_counts].insert(:user_id=>@db_user.id, :activity_id=>activity_id, :fitocracy_activity_id=>fitocracy_activity['id'], :count=>fitocracy_activity['count'])
+      updated += 1
+    end
+
+  end
+
+  "Created #{created} and updated #{updated} activities."
+end
+
+get '/user/activity_log/sync' do
+
+  records = 0
+  @db_user.user_activity_counts_dataset.each do |activity_count|
+    logger.info(activity_count)
+    fitocracy_activity = ::Fitocracy::Activity.new(user: @user, agent: @agent,  id: activity_count[:fitocracy_activity_id])
+    data = JSON.parse(fitocracy_activity.activity_log.body)
+    data.each do |child|
+      child['actions'].each do |action|
+        ua = UserActivity.first(:fitocracy_id=>action['id'])
+        if ua.nil?
+          database[:user_activities].insert(:user_id=>@db_user.id,
+                                            :activity_id=>activity_count[:activity_id],
+                                            :fitocracy_id=>action['id'],
+                                            :fitocracy_group_id=>action['action_group_id'],
+                                            :date=>action['actiontime'],
+                                            :reps=>action['effort1'],
+                                            :weight=>action['effort1'],
+                                            :units=>(action['effort0_unit'].nil? ? nil : action['effort0_unit']['abbr'] )
+          )
+          records += 1
+        end
+      end
+    end
+
+  end
+
+
+  "Inserted or updated #{records} records"
+end
+
 
 get '/charts' do
   File.read(File.join('public', 'charts.html'))

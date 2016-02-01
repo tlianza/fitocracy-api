@@ -66,6 +66,9 @@ Vagrant.configure(2) do |config|
   # documentation for more information about their specific syntax and use.
    config.vm.provision "shell", inline: <<-SHELL
      sudo apt-get update
-     sudo apt-get install -y bundler zlib1g-dev
+     sudo apt-get install -y bundler zlib1g-dev sqlite3 libsqlite3-dev
+     command curl -sSL https://rvm.io/mpapis.asc | gpg --import -
+     curl -sSL https://get.rvm.io | bash -s stable --ruby
+     source ~/.rvm/scripts/rvm
    SHELL
 end

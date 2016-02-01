@@ -1,6 +1,6 @@
 require_relative '../lib/fitocracy/paths'
 
-class User
+class FitocracyUser
   # include ::Fitocracy::Paths
 
   attr_reader :username, :password
