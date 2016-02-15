@@ -15,7 +15,7 @@ set :database, "sqlite://#{settings.db['path']}"
 require_relative 'models/db'
 
 set :sessions, true
-set :session_secret, 'change_me'
+set :session_secret, settings.session_secret
 
 get '/' do
   erb :index
