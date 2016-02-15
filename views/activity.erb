@@ -1,0 +1,29 @@
+<ol class="breadcrumb">
+    <li><a href="/">Home</a></li>
+    <li><a href="/user/activities">Activities</a></li>
+    <li class="active"><%=@activity[:name]%></li>
+</ol>
+
+<h1> <%=@activity[:name]%></h1>
+
+<div class="panel panel-default">
+    <!-- Default panel contents -->
+    <div class="panel-heading">Activity History</div>
+
+    <!-- Table -->
+    <table class="table">
+        <th>
+            <th>Date</th>
+            <th>Reps</th>
+            <th>Weight</th>
+        </th>
+        <% @user_activities.each do |ua| %>
+            <tr>
+                <td><%=ua.id%></td>
+                <td><%=ua.date.utc.localtime("-08:00").strftime("%Y-%m-%d %I:%M %p")%></td>
+                <td><%=ua.reps%></td>
+                <td><%=ua.weight%> <%=ua.units%></td>
+            </tr>
+        <% end %>
+    </table>
+</div>

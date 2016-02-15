@@ -11,9 +11,10 @@ class Activity < Sequel::Model
 end
 
 class UserActivityCount < Sequel::Model
+  set_primary_key [:user_id, :activity_id]
+
   many_to_one :user
   many_to_one :activity
-
 end
 
 class UserActivity < Sequel::Model

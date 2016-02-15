@@ -1,9 +1,21 @@
+<ol class="breadcrumb">
+    <li class="active">Home</li>
+</ol>
+
 <h1>Available Paths</h1>
 
 <ul>
   <li><a href="/login">/login</a></li>
   <li><a href="/logout">/logout</a></li>
-  <li><a href="/user/activities">/user/activities</a></li>
-  <li>/user/activity/:activity_name</li>
-  <li>/user/activity/:activity_name/export</li>
+  <li><a href="/user/activities/sync">/user/activities/sync</a> (do this first, to sync the list of activities you perform)</li>
+  <li><a href="/user/activity_log/sync">/user/activity_log/sync</a> (do this second, to sync each instance of an activity)</li>
+  <li><a href="/user/activities">/user/activities</a> view your activities</li>
+</ul>
+
+<h2>Fitocracy APIs</h2>
+These just proxy over to Fitocracy without persisting data (and are slow)
+<ul>
+    <li><a href="/user/fitocracy/activities">/user/fitocracy/activities</a></li>
+    <li>/user/fitocracy/activity/:activity_name</li>
+    <li>/user/activity/:activity_name/export</li>
 </ul>

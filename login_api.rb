@@ -28,7 +28,7 @@ end
 post '/login' do
   session[:username] = request.POST['username']
   session[:password] = request.POST['password']
-  redirect to("/user/activities")
+  redirect to("/")
 end
 
 get '/logout' do
@@ -61,47 +61,11 @@ before '/user/*' do
 
 end
 
-get '/user/activities' do
-  activity = ::Fitocracy::Activity.new(user:  @user, agent: @agent)
-  all_activites_data = activity.get_all_activities_for_user
-
-  content_type :json
-  JSON.pretty_generate(JSON.parse(all_activites_data.body))
-end
-
-get '/user/activity/:activity_name' do
-  activity = ::Fitocracy::Activity.new(user:          @user,
-                                       agent:         @agent,
-                                       activity_name: params[:activity_name])
-
-  activity_data = activity.activity_log
-
-  content_type :json
-  JSON.pretty_generate(JSON.parse(activity_data.body))
-end
-
-get '/user/activity/:activity_name/export' do
-  activity = ::Fitocracy::Activity.new(user: @user, agent: @agent, activity_name: params[:activity_name])
-  data = JSON.parse(activity.activity_log.body)
-
-  csv_string = CSV.generate do |csv|
-    data.each do |child|
-      child['actions'].each do |action|
-        csv << [params[:activity_name], child['date'], action['effort1'], action['effort1_unit']['abbr'], action['effort0'], action['effort0_unit']['abbr']]
-      end
-    end
-  end
-
-  content_type 'text/csv'
-  csv_string
-end
-
 get '/user/activities/sync' do
   activity_call = ::Fitocracy::Activity.new(user:  @user, agent: @agent)
   all_activites_data = JSON.parse(activity_call.get_all_activities_for_user.body)
 
-  updated = 0
-  created = 0
+  updated, created = 0, 0
   all_activites_data.each do |fitocracy_activity|
     activity_id = 0
     activity = Activity.first(:fitocracy_id => fitocracy_activity['id'])
@@ -116,6 +80,10 @@ get '/user/activities/sync' do
     if activity_count.nil?
       database[:user_activity_counts].insert(:user_id=>@db_user.id, :activity_id=>activity_id, :fitocracy_activity_id=>fitocracy_activity['id'], :count=>fitocracy_activity['count'])
       updated += 1
+    else
+      activity_count.count = fitocracy_activity['count']
+      activity_count.save
+      updated += 1
     end
 
   end
@@ -125,7 +93,7 @@ end
 
 get '/user/activity_log/sync' do
 
-  records = 0
+  records, skipped = 0, 0
   @db_user.user_activity_counts_dataset.each do |activity_count|
     logger.info(activity_count)
     fitocracy_activity = ::Fitocracy::Activity.new(user: @user, agent: @agent,  id: activity_count[:fitocracy_activity_id])
@@ -140,10 +108,12 @@ get '/user/activity_log/sync' do
                                             :fitocracy_group_id=>action['action_group_id'],
                                             :date=>action['actiontime'],
                                             :reps=>action['effort1'],
-                                            :weight=>action['effort1'],
+                                            :weight=>action['effort0'],
                                             :units=>(action['effort0_unit'].nil? ? nil : action['effort0_unit']['abbr'] )
           )
           records += 1
+        else
+          skipped += 1
         end
       end
     end
@@ -151,10 +121,57 @@ get '/user/activity_log/sync' do
   end
 
 
-  "Inserted or updated #{records} records"
+  "Inserted or updated #{records} records. Skipped #{skipped} existing records."
 end
 
+get '/user/activities' do
+  @user_activities = @db_user.user_activity_counts_dataset.eager(:activity)
+  erb :activities
+end
+
+get '/user/activity/:id' do
+  @activity = database[:activities].first(:id=>params[:id])
+  @user_activities = @db_user.user_activities_dataset.where(:activity_id=>params[:id]).reverse_order(:date)
+  erb :activity
+end
 
 get '/charts' do
   File.read(File.join('public', 'charts.html'))
+end
+
+# get '/user/activity/:activity_name/export' do
+#   @db_user.user_activity_counts_dataset.each do |activity_count|
+#
+#   csv_string = CSV.generate do |csv|
+#     data.each do |child|
+#       child['actions'].each do |action|
+#         csv << [params[:activity_name], child['date'], action['effort1'], action['effort1_unit']['abbr'], action['effort0'], action['effort0_unit']['abbr']]
+#       end
+#     end
+#   end
+#
+#   content_type 'text/csv'
+#   csv_string
+# end
+
+###########################
+# Fitocracy proxy APIs
+###########################
+get '/user/fitocracy/activities' do
+  activity = ::Fitocracy::Activity.new(user:  @user, agent: @agent)
+  all_activites_data = activity.get_all_activities_for_user
+
+  content_type :json
+  JSON.pretty_generate(JSON.parse(all_activites_data.body))
+end
+
+get '/user/fitocracy/activity/:activity_name' do
+  activity = ::Fitocracy::Activity.new(user:          @user,
+      agent:         @agent,
+      activity_name: params[:activity_name])
+
+  activity_data = activity.activity_log
+
+  content_type :json
+  JSON.pretty_generate(JSON.parse(activity_data.body))
 end

@@ -1,0 +1,12 @@
+<ol class="breadcrumb">
+    <li><a href="/">Home</a></li>
+    <li class="active">Activities</li>
+</ol>
+
+<h1>Activities</h1>
+
+<div class="list-group">
+<% @user_activities.each do |ua| %>
+        <a class="list-group-item" href="/user/activity/<%=ua.activity_id%>"><span class="badge"><%=ua.count%></span><%=ua.activity.name%></a>
+<% end %>
+</div>
