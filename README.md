@@ -17,9 +17,11 @@ Currently the user name is ignored. I have environment variables set on my Herok
 
 # Setup
 
-You should be able to simply clone the project, perform a `bundle install` and then start your Sinatra server with `bundle exec ruby -rubygems login_api.rb`.
+You should be able to simply clone the project, perform a `bundle install` and then start your Sinatra server with 
+`bundle exec rackup -p 4567 -o 0.0.0.0 config.ru`. Or under unicorn with `unicorn unicorn.rb` after editing unicorn.rb
 
-In `login.api.rb` you'll need to swap out the Username and Password with your actual credentials, or you can optionally set the following environment variables in `user.rb`.
+In `login.api.rb` you'll need to swap out the Username and Password with your actual credentials, or you can optionally 
+set the following environment variables in `user.rb`.
 
 ````ruby
 class User

@@ -10,6 +10,7 @@ gem 'pry-remote'
 gem 'sequel'
 gem 'sinatra-sequel'
 gem 'sqlite3'
+gem 'unicorn'
 
 group :development,:test do
   gem 'rspec'

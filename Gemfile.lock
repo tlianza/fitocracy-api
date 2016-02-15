@@ -10,6 +10,7 @@ GEM
     http-cookie (1.0.2)
       domain_name (~> 0.5)
     json (1.8.3)
+    kgio (2.10.0)
     mechanize (2.7.4)
       domain_name (~> 0.5, >= 0.5.1)
       http-cookie (~> 1.0)
@@ -40,6 +41,7 @@ GEM
       rack
     rack-test (0.6.3)
       rack (>= 1.0)
+    raindrops (0.15.0)
     rspec (3.4.0)
       rspec-core (~> 3.4.0)
       rspec-expectations (~> 3.4.0)
@@ -77,6 +79,10 @@ GEM
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.1)
+    unicorn (5.0.1)
+      kgio (~> 2.6)
+      rack
+      raindrops (~> 0.7)
     webrobots (0.1.2)
 
 PLATFORMS
@@ -95,3 +101,4 @@ DEPENDENCIES
   sinatra-contrib
   sinatra-sequel
   sqlite3
+  unicorn
