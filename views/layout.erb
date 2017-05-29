@@ -18,12 +18,28 @@
 <body>
 
 <div class="container">
+    <nav class="navbar navbar-default">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="/">FitAPI</a>
+            </div>
+
+            <!-- Collect the nav links, forms, and other content for toggling -->
+            <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+                <ul class="nav navbar-nav navbar-right">
+                    <%if session[:username] %>
+                        <li>Hi <%=session[:username]%></li>
+                    <%else%>
+                        <li><a href="/login">Login</a></li>
+                    <% end %>
+                </ul>
+            </div><!-- /.navbar-collapse -->
+        </div><!-- /.container-fluid -->
+    </nav>
+
 
     <%=yield%>
 
-    <%if session[:username] %>
-        <div class="alert alert-success" role="alert">Currently logged-in user: <%=session[:username]%> </div>
-    <% end %>
 
 </div> <!-- /container -->
 

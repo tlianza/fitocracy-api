@@ -17,6 +17,7 @@ vendor/bundle
 .idea
 unicorn.rb
 fitocracy.db
+fitocracy_vault/
 
 # YARD artifacts
 .yardoc

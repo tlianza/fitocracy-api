@@ -5,20 +5,17 @@ Feel free to look me up and follow me on fitocracy as sjoconnor.
 
 # Disclaimer
 
-This is an unofficial API to help you get your lifting data from Fitocracy. I am in no way affiliated with Fitocracy, and do not represent them. Additionally, I have no desire to be responsible for your username and password, so although I may create forms to make certain things easier to access, I will not publicly host this app. Please be careful when using this and keep your username/password secure.
-
-# Examples
-
-Currently the user name is ignored. I have environment variables set on my Heroku. I plan to actually utilize the supplied username, but for now it will use whatever username you have configured.
-
-* http://fitocracy-unofficial-api.herokuapp.com
-* http://fitocracy-unofficial-api.herokuapp.com/user/soconnor/activities
-* http://fitocracy-unofficial-api.herokuapp.com/user/soconnor/activity/Barbell%20Bench%20Press
+This is an unofficial API to help you get your lifting data from Fitocracy. I am in no way affiliated with Fitocracy, and do not represent them. 
+If you choose to store your password for ongoing synchronization, this system attempts to do so in a secure way and 
+does not log it in plain text. However, this system is by definition able to use your password to connect to Fitocracy
+and therefore stores it in a decryptable way. Use at your own risk. Changing your password at Fitocracy will forcibly
+disable this system's ability to access your account.
 
 # Setup
 
 You should be able to simply clone the project, perform a `bundle install` and then start your Sinatra server with 
-`bundle exec rackup -p 4567 -o 0.0.0.0 config.ru`. Or under unicorn with `unicorn unicorn.rb` after editing unicorn.rb
+`bundle exec rackup -p 4567 -o 0.0.0.0 config.ru`. Or under unicorn with `unicorn` after renaming example-unicorn.rb
+to unicorn.rb
 
 In `login.api.rb` you'll need to swap out the Username and Password with your actual credentials, or you can optionally 
 set the following environment variables in `user.rb`.
@@ -41,11 +38,25 @@ class User
 end
 ````
 
+To configure [vault](https://www.vaultproject.io), which is used for storing secrets follow the following steps:
+
+ 1. [Install vault](https://www.vaultproject.io/downloads.html) and put the binary in your system path.
+ 2. Start the vault server: `sudo vault server -config=/PATH_TO_PROJECT/vault.hcl &` (note, in prod you will want to change the configuration to use TLS)
+ 3. If you're not using TLS (default) set this environment variable: `export VAULT_ADDR=http://127.0.0.1:8200`
+ 4. Initialize vault: `vault init` put the 5 keys and the root token in a safe place
+ 5. Run the command `vault unseal` 3 times in a row, with a different one of the previous 5 keys each time
+ 6. Authenticate with your root token: `vault auth`
+ 7. Create a new token for this application to use: `vault token-create`
+ 8. Paste that token into config.yml in this file under the vault/token key.
+
 # My Lifts
 
-Hitting `/user/:username/activities` will return JSON with all of your lifts. For now the `:username` paramater is just fluff, as all actions will be done based upon the logged in user. In the future the passed in `:username` will be used.
+* Hitting `/user/fitocracy/activities` will return JSON with all of your lifts, pulled directly from Fitocracy.
+* Hitting `/user/activities/sync` will perform the above action, but persist your lifts to the local database.
+* Hitting `/user/activity_log/sync` will iterate through all of your activities and fetch all of the details to the local database.
+* Hitting `/user/activities` will return a UI with all of your lifts, pulled from the local database. It's only useful after you've performed the sync operations above.
 
-Sample output:
+Sample output from `/user/fitocracy/activities`:
 
 ````JSON
 [
@@ -84,7 +95,7 @@ Sample output:
 
 # Specific Lifts
 
-You can get data regarding a specific link by appending the exercise name, exactly as it comes from Fitocracy, like so: `/user/:username/activity/:activity_name`. Pass the activity name ("Barbell Bench Press") as a param. The lift name must match exactly as it does on Fitocracy.
+You can get data regarding a specific link by appending the exercise name, exactly as it comes from Fitocracy, like so: `/user/fitocracy/activity/:activity_name`. Pass the activity name ("Barbell Bench Press") as a param. The lift name must match exactly as it does on Fitocracy.
 
 Sample output:
 
@@ -126,6 +137,9 @@ Sample output:
 ````
 
 # Changelog
+
+### January 2016
+* Updated with database support, password storage support, and basic UI
 
 ### November 22, 2012
 * Routes were changed so login validations could be ran before each request.

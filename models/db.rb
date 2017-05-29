@@ -1,4 +1,7 @@
 
+#Add timestamps to all models
+Sequel::Model.plugin :timestamps, :update_on_create => true
+
 class User < Sequel::Model
   one_to_many :user_activities
   one_to_many :user_activity_counts
@@ -30,14 +33,19 @@ migration "Create initial tables" do
     primary_key :id
     String      :username
     integer     :fitocracy_id, :null => false
+    DateTime    :created_at
+    DateTime    :updated_at
 
     index :username, :unique => true
+    index :fitocracy_id, :unique => true
   end
 
   database.create_table :activities do
     primary_key :id
     integer     :fitocracy_id, :null => false
     String      :name, :null => false
+    DateTime    :created_at
+    DateTime    :updated_at
 
     index :fitocracy_id, :unique => true
   end
@@ -47,7 +55,11 @@ migration "Create initial tables" do
     integer   :activity_id,           :null => false
     integer   :fitocracy_activity_id, :null => false
     integer   :count,                 :null=>false
+    DateTime  :created_at
+    DateTime  :updated_at
 
+    index :user_id
+    index :updated_at
     index [:user_id, :activity_id], :unique => true
     index [:user_id, :fitocracy_activity_id], :unique => true
   end
@@ -64,6 +76,10 @@ migration "Create initial tables" do
     integer     :reps
     integer     :weight
 
+    DateTime    :created_at
+    DateTime    :updated_at
+
     index :fitocracy_id, :unique => true
+    index :user_id
   end
 end

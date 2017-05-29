@@ -1,14 +1,27 @@
+<ol class="breadcrumb">
+    <li><a href="/">Home</a></li>
+    <li class="active">Login</li>
+</ol>
+
 <form class="form-signin" method="post">
       <h2 class="form-signin-heading">Login</h2>
       <p>Your password is not logged by this server, and is forwarded on to Fitocracy directly. Still, use
       at your own risk.</p>
 
+    <div class="form-group">
       <label for="inputUsername" class="sr-only">Username</label>
       <input type="text" id="inputUsername" class="form-control" name="username" placeholder="Username" required autofocus>
+    </div>
+    <div class="form-group">
       <label for="inputPassword" class="sr-only">Password</label>
       <input type="password" id="inputPassword" class="form-control" name="password" placeholder="Password" required>
-
-      <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
+    </div>
+    <div class="checkbox">
+        <label>
+            <input name="storePw" type="checkbox" checked="checked"> Store my credentials (required for background sync)
+        </label>
+    </div>
+    <button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
 </form>
 
 

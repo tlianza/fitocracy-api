@@ -11,6 +11,7 @@ gem 'sequel'
 gem 'sinatra-sequel'
 gem 'sqlite3'
 gem 'unicorn'
+gem 'vault'
 
 group :development,:test do
   gem 'rspec'

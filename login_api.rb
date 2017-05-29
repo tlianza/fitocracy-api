@@ -3,10 +3,12 @@ require 'mechanize'
 require 'json'
 require 'pry'
 require 'csv'
+require 'vault'
 require 'sinatra/sequel'
 require_relative 'models/fitocracy_user'
 require_relative 'page_models/login'
 require_relative 'lib/fitocracy/activity'
+require_relative 'lib/fitocracy/authenticator'
 
 require "sinatra/config_file"
 config_file 'config.yml'
@@ -16,6 +18,9 @@ require_relative 'models/db'
 
 set :sessions, true
 set :session_secret, settings.session_secret
+
+Vault.address = settings.vault['addr'] # Also reads from ENV["VAULT_ADDR"]
+Vault.token   = settings.vault['token'] # Also reads from ENV["VAULT_TOKEN"]
 
 get '/' do
   erb :index
@@ -28,31 +33,37 @@ end
 post '/login' do
   session[:username] = request.POST['username']
   session[:password] = request.POST['password']
+
+  @agent = Mechanize.new
+  @user  = FitocracyUser.new({ agent: @agent, username:session[:username], password:session[:password]})
+  halt(401, @user.error) if @user.error
+  authenticator = Fitocracy::Authenticator.new(@user)
+  @user = authenticator.auth()
+  halt(401, @user.error) if @user.error
+
+  if request.POST['storePw']
+    Vault.logical.write("secret/user_#{@user.x_fitocracy_user}", pw: session[:password])
+  end
+
   redirect to("/")
 end
 
 get '/logout' do
   session[:username] = nil
   session[:password] = nil
-  redirect to('/login')
+  redirect to('/')
 end
 
 
 before '/user/*' do
   @agent = Mechanize.new
   @user  = FitocracyUser.new({ agent: @agent, username:session[:username], password:session[:password]})
-
+  halt(401, @user.error) if @user.error
+  authenticator = Fitocracy::Authenticator.new(@user)
+  @user = authenticator.auth()
   halt(401, @user.error) if @user.error
 
-  login_model     = ::PageModels::Login.new(@agent, @user)
-  login_response  = login_model.login
-  login_json      = JSON.parse(login_response.body)
-
-  halt(401, login_json['error']) unless login_json['success']
-
-  @user.x_fitocracy_user  = login_response["X-Fitocracy-User"]
-
-  # Store the user info in our db, since they've auth'd
+  # Store the user info in our db, since they've auth'd (not password)
   @db_user = User.first(:username => @user.username)
   if @db_user.nil?
     id = database[:users].insert(:username => @user.username, :fitocracy_id => @user.x_fitocracy_user)
@@ -125,7 +136,7 @@ get '/user/activity_log/sync' do
 end
 
 get '/user/activities' do
-  @user_activities = @db_user.user_activity_counts_dataset.eager(:activity)
+  @user_activities = @db_user.user_activity_counts_dataset.eager(:activity).reverse_order(:updated_at)
   erb :activities
 end
 

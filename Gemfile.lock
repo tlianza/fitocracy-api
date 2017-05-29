@@ -83,6 +83,7 @@ GEM
       kgio (~> 2.6)
       rack
       raindrops (~> 0.7)
+    vault (0.2.0)
     webrobots (0.1.2)
 
 PLATFORMS
@@ -102,3 +103,4 @@ DEPENDENCIES
   sinatra-sequel
   sqlite3
   unicorn
+  vault
