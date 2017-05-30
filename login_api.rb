@@ -5,6 +5,7 @@ require 'pry'
 require 'csv'
 require 'vault'
 require 'sinatra/sequel'
+require 'sinatra/streaming'
 require_relative 'models/fitocracy_user'
 require_relative 'page_models/login'
 require_relative 'lib/fitocracy/activity'
@@ -73,66 +74,68 @@ before '/user/*' do
 end
 
 get '/user/activities/sync' do
-  activity_call = ::Fitocracy::Activity.new(user:  @user, agent: @agent)
-  all_activites_data = JSON.parse(activity_call.get_all_activities_for_user.body)
+  stream do |out|
+    out << "Fetching activities...<br />\n"
+    activity_call = ::Fitocracy::Activity.new(user:  @user, agent: @agent)
+    all_activites_data = JSON.parse(activity_call.get_all_activities_for_user.body)
+    out << "Looping activities...<br />\n"
 
-  updated, created = 0, 0
-  all_activites_data.each do |fitocracy_activity|
-    activity_id = 0
-    activity = Activity.first(:fitocracy_id => fitocracy_activity['id'])
-    if activity.nil?
-      activity_id = database[:activities].insert(:fitocracy_id => fitocracy_activity['id'], :name=>fitocracy_activity['name'])
-      created += 1
-    else
-      activity_id = activity.id
+    updated, created = 0, 0
+    all_activites_data.each do |fitocracy_activity|
+      activity_id = 0
+      activity = Activity.first(:fitocracy_id => fitocracy_activity['id'])
+      if activity.nil?
+        activity_id = database[:activities].insert(:fitocracy_id => fitocracy_activity['id'], :name=>fitocracy_activity['name'])
+        created += 1
+      else
+        activity_id = activity.id
+      end
+
+      activity_count = UserActivityCount.first(:user_id=>@db_user.id, :activity_id=>activity_id)
+      if activity_count.nil?
+        database[:user_activity_counts].insert(:user_id=>@db_user.id, :activity_id=>activity_id, :fitocracy_activity_id=>fitocracy_activity['id'], :count=>fitocracy_activity['count'])
+        updated += 1
+      else
+        activity_count.count = fitocracy_activity['count']
+        activity_count.save
+        updated += 1
+      end
+      out << "Created #{created} and updated #{updated} activities.<br />\n"
     end
-
-    activity_count = UserActivityCount.first(:user_id=>@db_user.id, :activity_id=>activity_id)
-    if activity_count.nil?
-      database[:user_activity_counts].insert(:user_id=>@db_user.id, :activity_id=>activity_id, :fitocracy_activity_id=>fitocracy_activity['id'], :count=>fitocracy_activity['count'])
-      updated += 1
-    else
-      activity_count.count = fitocracy_activity['count']
-      activity_count.save
-      updated += 1
-    end
-
   end
-
-  "Created #{created} and updated #{updated} activities."
 end
 
 get '/user/activity_log/sync' do
-
-  records, skipped = 0, 0
-  @db_user.user_activity_counts_dataset.each do |activity_count|
-    logger.info(activity_count)
-    fitocracy_activity = ::Fitocracy::Activity.new(user: @user, agent: @agent,  id: activity_count[:fitocracy_activity_id])
-    data = JSON.parse(fitocracy_activity.activity_log.body)
-    data.each do |child|
-      child['actions'].each do |action|
-        ua = UserActivity.first(:fitocracy_id=>action['id'])
-        if ua.nil?
-          database[:user_activities].insert(:user_id=>@db_user.id,
-                                            :activity_id=>activity_count[:activity_id],
-                                            :fitocracy_id=>action['id'],
-                                            :fitocracy_group_id=>action['action_group_id'],
-                                            :date=>action['actiontime'],
-                                            :reps=>action['effort1'],
-                                            :weight=>action['effort0'],
-                                            :units=>(action['effort0_unit'].nil? ? nil : action['effort0_unit']['abbr'] )
-          )
-          records += 1
-        else
-          skipped += 1
+  stream do |out|
+    out << "Looping activities...<br />\n"
+    records, skipped = 0, 0
+    @db_user.user_activity_counts_dataset.each do |activity_count|
+      logger.info(activity_count)
+      fitocracy_activity = ::Fitocracy::Activity.new(user: @user, agent: @agent,  id: activity_count[:fitocracy_activity_id])
+      data = JSON.parse(fitocracy_activity.activity_log.body)
+      data.each do |child|
+        child['actions'].each do |action|
+          ua = UserActivity.first(:fitocracy_id=>action['id'])
+          if ua.nil?
+            database[:user_activities].insert(:user_id=>@db_user.id,
+                                              :activity_id=>activity_count[:activity_id],
+                                              :fitocracy_id=>action['id'],
+                                              :fitocracy_group_id=>action['action_group_id'],
+                                              :date=>action['actiontime'],
+                                              :reps=>action['effort1'],
+                                              :weight=>action['effort0'],
+                                              :units=>(action['effort0_unit'].nil? ? nil : action['effort0_unit']['abbr'] )
+            )
+            records += 1
+          else
+            skipped += 1
+          end
+          out << "Created #{records} and skipped #{skipped}.<br />\n"
         end
       end
     end
-
+    out << "Done<br />\n"
   end
-
-
-  "Inserted or updated #{records} records. Skipped #{skipped} existing records."
 end
 
 get '/user/activities' do
