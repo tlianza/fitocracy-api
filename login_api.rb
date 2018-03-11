@@ -11,17 +11,11 @@ require_relative 'page_models/login'
 require_relative 'lib/fitocracy/activity'
 require_relative 'lib/fitocracy/authenticator'
 
-require "sinatra/config_file"
-config_file 'config.yml'
-
-set :database, "sqlite://#{settings.db['path']}"
+set :database, "sqlite://#{ENV["DB_PATH"]}"
 require_relative 'models/db'
 
 set :sessions, true
-set :session_secret, settings.session_secret
-
-Vault.address = settings.vault['addr'] # Also reads from ENV["VAULT_ADDR"]
-Vault.token   = settings.vault['token'] # Also reads from ENV["VAULT_TOKEN"]
+set :session_secret, ENV["SESSION_SECRET"]
 
 get '/' do
   erb :index

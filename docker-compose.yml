@@ -1,0 +1,18 @@
+version: '3'
+services:
+  web:
+    build: .
+    ports:
+     - "8080:8080"
+    volumes:
+     - ./fitocracy.db:/fitocracy-db/fitocracy.db
+    environment:
+      APP_HOME: /fitocracy-api
+      DB_PATH: /fitocracy-db/fitocracy.db
+      VAULT_ADDR: http://vault:8200
+      VAULT_TOKEN: 75bbe1d0-6caf-7b32-e48a-c5c28e2834c4 #change for your dev token
+      SESSION_SECRET: change_me
+  vault:
+    build: vault/.
+    ports:
+      - "8200:8200"

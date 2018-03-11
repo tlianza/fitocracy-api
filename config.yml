@@ -1,6 +1,0 @@
-db:
-  path: fitocracy.db
-vault:
-  addr: http://127.0.0.1:8200
-  token: see_readme_for_how_to_generate_this
-session_secret: change_me
