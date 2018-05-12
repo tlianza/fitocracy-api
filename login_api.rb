@@ -3,13 +3,16 @@ require 'mechanize'
 require 'json'
 require 'pry'
 require 'csv'
-require 'vault'
 require 'sinatra/sequel'
 require 'sinatra/streaming'
 require_relative 'models/fitocracy_user'
 require_relative 'page_models/login'
 require_relative 'lib/fitocracy/activity'
 require_relative 'lib/fitocracy/authenticator'
+require_relative 'lib/secret_service'
+
+# Required for good logging in docker
+$stdout.sync = true
 
 set :database, "sqlite://#{ENV["DB_PATH"]}"
 require_relative 'models/db'
@@ -37,7 +40,7 @@ post '/login' do
   halt(401, @user.error) if @user.error
 
   if request.POST['storePw']
-    Vault.logical.write("secret/user_#{@user.x_fitocracy_user}", pw: session[:password])
+    SecretService.write_fitocracy_cred(@user.x_fitocracy_user, session[:password])
   end
 
   redirect to("/")

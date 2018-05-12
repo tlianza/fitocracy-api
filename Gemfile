@@ -12,6 +12,7 @@ gem 'sinatra-sequel'
 gem 'sqlite3'
 gem 'unicorn'
 gem 'vault'
+gem 'google-api-client'
 
 group :development,:test do
   gem 'rspec'

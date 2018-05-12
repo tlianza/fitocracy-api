@@ -12,7 +12,16 @@ services:
       VAULT_ADDR: http://vault:8200
       VAULT_TOKEN: 75bbe1d0-6caf-7b32-e48a-c5c28e2834c4 #change for your dev token
       SESSION_SECRET: change_me
+  consul:
+    build: consul/.
+    ports:
+      - "8500:8500"
   vault:
     build: vault/.
+    environment:
+      VAULT_LOCAL_CONFIG: storage "consul" { address = "consul:8500" path = "vault/" }
+      VAULT_DEV_ROOT_TOKEN_ID: 75bbe1d0-6caf-7b32-e48a-c5c28e2834c4
     ports:
       - "8200:8200"
+    depends_on:
+      - consul

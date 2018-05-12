@@ -1,0 +1,14 @@
+version: '3'
+services:
+  web:
+    build: .
+    ports:
+     - "8080:8080"
+    volumes:
+     - ./fitocracy.db:/fitocracy-db/fitocracy.db
+    environment:
+      APP_HOME: /fitocracy-api
+      DB_PATH: /fitocracy-db/fitocracy.db
+      SESSION_SECRET: change_me
+#      GCLOUD_PROJECT_ID: optional_if_using_gcloud
+#      GCLOUD_KEY_LOCATION: optional_ex_us_or_global
