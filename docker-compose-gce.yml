@@ -10,5 +10,8 @@ services:
       APP_HOME: /fitocracy-api
       DB_PATH: /fitocracy-db/fitocracy.db
       SESSION_SECRET: change_me
-#      GCLOUD_PROJECT_ID: optional_if_using_gcloud
-#      GCLOUD_KEY_LOCATION: optional_ex_us_or_global
+      GCLOUD_KEYRING_NAME: FitocracyApi          # Will be created if it doesn't exist
+      GCLOUD_KEY_NAME: FitocracyCreds            # Will be created if it doesn't exist
+      GCLOUD_PROJECT_ID: fitocracypal            # Needs to be created in advance
+      GCLOUD_KEY_LOCATION: global
+      GCLOUD_STORAGE_BUCKET: fit.fitocracypal.cf # Needs to be created in advance

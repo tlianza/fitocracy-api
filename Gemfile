@@ -13,6 +13,7 @@ gem 'sqlite3'
 gem 'unicorn'
 gem 'vault'
 gem 'google-api-client'
+gem 'google-cloud-storage'
 
 group :development,:test do
   gem 'rspec'

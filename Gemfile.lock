@@ -9,6 +9,7 @@ GEM
     declarative (0.0.10)
     declarative-option (0.1.0)
     diff-lcs (1.2.5)
+    digest-crc (0.4.1)
     domain_name (0.5.25)
       unf (>= 0.0.5, < 1.0.0)
     faraday (0.14.0)
@@ -22,6 +23,14 @@ GEM
       mime-types (>= 1.6)
       representable (~> 3.0)
       retriable (>= 2.0, < 4.0)
+    google-cloud-core (1.2.0)
+      google-cloud-env (~> 1.0)
+    google-cloud-env (1.0.1)
+      faraday (~> 0.11)
+    google-cloud-storage (0.25.0)
+      digest-crc (~> 0.4)
+      google-api-client (~> 0.10.0)
+      google-cloud-core (~> 1.0)
     googleauth (0.6.2)
       faraday (~> 0.12)
       jwt (>= 1.4, < 3.0)
@@ -136,6 +145,7 @@ PLATFORMS
 
 DEPENDENCIES
   google-api-client
+  google-cloud-storage
   json
   mechanize
   pry
