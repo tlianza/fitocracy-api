@@ -10,10 +10,8 @@ class SecretService
     if vault?
       Vault.logical.write(SecretService.pw_path(fitocracy_user), pw: fitocracy_password)
     elsif gce?
-      storage = SecretService.get_gce_storage
-      puts "Accessing bucket #{ENV['GCLOUD_STORAGE_BUCKET']}"
-      bucket  = storage.bucket ENV['GCLOUD_STORAGE_BUCKET']
       enc = SecretService.gce_encrypt(fitocracy_password)
+      bucket = SecretService.gce_bucket
       bucket.create_file StringIO.new(enc), SecretService.pw_path(fitocracy_user)
     else
       raise "No secrets store configured. Vault or GCE need environment variables to be set."
@@ -24,8 +22,7 @@ class SecretService
     if vault?
       Vault.logical.read(SecretService.pw_path(fitocracy_user))
     elsif gce?
-      storage = SecretService.get_gce_storage
-      bucket  = storage.bucket ENV['GCLOUD_STORAGE_BUCKET']
+      bucket = SecretService.gce_bucket
       file = bucket.file SecretService.pw_path(fitocracy_user)
       downloaded = file.download
       downloaded.rewind
@@ -48,6 +45,12 @@ class SecretService
 
   def SecretService.pw_path(fitocracy_user)
     "fitpw/user_#{fitocracy_user}"
+  end
+
+  def SecretService.gce_bucket
+    storage = SecretService.get_gce_storage
+    puts "Accessing bucket #{ENV['GCLOUD_STORAGE_BUCKET']}"
+    return storage.bucket ENV['GCLOUD_STORAGE_BUCKET']
   end
 
   def SecretService.get_kms_client

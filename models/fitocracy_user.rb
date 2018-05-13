@@ -17,7 +17,7 @@ class FitocracyUser
   private
 
   def validate_user
-    @error ||= 'Username is missing' if username.empty?
-    @error ||= 'Password is missing' if password.empty?
+    @error ||= 'Username is missing' if username.to_s.empty?
+    @error ||= 'Password is missing' if password.to_s.empty?
   end
 end
